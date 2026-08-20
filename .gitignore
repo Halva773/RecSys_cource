@@ -16,3 +16,10 @@ __pycache__/
 *-journal
 *-wal
 *-shm
+
+# Лабораторная №4: датасет и индексы пересоздаются локально.
+/lab4_fashion_recommender/data/*
+!/lab4_fashion_recommender/data/README.md
+/lab4_fashion_recommender/artifacts/
+/lab4_fashion_recommender/reports/figures/
+/lab4_fashion_recommender/reports/eda_summary.json
