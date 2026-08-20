@@ -8,7 +8,6 @@
 | --- | --- | --- |
 | 1 | [`01_simple_system.ipynb`](01_simple_system.ipynb) | EDA кино-датасета, популярностные, content-based, Word2Vec и SVD-подходы. |
 | 2 | [`lab2.ipynb`](lab2.ipynb) | Сравнение collaborative filtering: KNN, SVD и SVD++. |
-| 3 | — | Пока не реализована. |
 | 4 | [`lab4_fashion_recommender/`](lab4_fashion_recommender/) | Visual search для fashion-товаров: EDA, HOG+PCA, ResNet-18, MobileNetV3 и Streamlit. |
 | 5–6 | [`lab5_recommender/`](lab5_recommender/) | Приложение Streamlit: ETL, SQLite, content-based, item-based collaborative, hybrid и cold start. |
 
@@ -23,13 +22,13 @@
 
 После этого откройте нужный `.ipynb` в Jupyter Notebook или VS Code. Зависимости: Python 3.10+, `pandas`, `numpy`, `matplotlib`, `seaborn`, `scikit-learn`, `gensim`, `wordcloud`, `scipy`, `scikit-surprise`.
 
-### Работы 5–6
-
-Инструкции по запуску, устройству приложения и структуре данных находятся в [README проекта](lab5_recommender/README.md).
-
 ### Работа 4
 
 Для визуального поиска нужен отдельный набор Fashion Product Images (Small), который слишком велик для Git. Скачивание, построение индекса и запуск интерфейса описаны в [README лабораторной №4](lab4_fashion_recommender/README.md).
+
+### Работы 5–6
+
+Инструкции по запуску, устройству приложения и структуре данных находятся в [README проекта](lab5_recommender/README.md).
 
 ## Репозиторий и данные
 
