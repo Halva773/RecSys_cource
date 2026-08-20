@@ -80,18 +80,18 @@
 Шаг 1: Построение признаков
     Каждый фильм = текстовый вектор признаков
     features[i] = genres[i] + " " + tags[i]
-    
+
     Пример: "Action Adventure", "Action Sci-Fi", "Comedy Drama"
 
 Шаг 2: TF-IDF преобразование
     TF-IDF(фильм) = вектор[300+] (частоты слов, взвешенные по редкости)
-    
+
     TF(слово) = кол-во вхождений слова в фильм / всего слов в фильме
     IDF(слово) = log(всего фильмов / фильмов со словом)
 
 Шаг 3: Косинусное сходство
     similarity(фильм_i, фильм_j) = (вектор_i · вектор_j) / (|вектор_i| × |вектор_j|)
-    
+
     Диапазон: [0, 1], где 1 = идентичные, 0 = совершенно разные
 
 Шаг 4: Рекомендации
@@ -106,7 +106,7 @@ profile = Σ(rating_i × tf_idf_i) / Σ rating_i    [без нормализац
 
 Центрирование (если разнообразие оценок > 0):
     weight_i = rating_i - mean(ratings)
-    
+
     → "нелюбимые" фильмы (≤2.5) получают отрицательный вес
     → это ОТТАЛКИВАЕТ профиль от их признаков
 ```
@@ -119,18 +119,18 @@ class ContentRecommender:
         self.movies = load_movies()  # title, year, genres, tags
         vec = TfidfVectorizer(token_pattern=r"[a-zA-Z0-9\-]+")
         self.matrix = vec.fit_transform(self.movies["features"])  # sparse matrix
-    
+
     def for_user(self, ratings: DataFrame) -> DataFrame:
         # ratings has columns: [movie_id, rating]
         seen_ids = set(ratings["movie_id"])
-        
+
         # Построить профиль: weighted sum TF-IDF vectors
         weights = ratings["rating"].values - ratings["rating"].mean()
         profile = self.matrix[indices].T @ weights
-        
+
         # Найти похожие
         similarities = cosine_similarity(profile, self.matrix)[0]
-        
+
         # Ранжировать (исключая уже оценённые)
         recommendations = [...]
         return recommendations
@@ -157,13 +157,13 @@ class ContentRecommender:
 ```
 Шаг 1: Построение матрицы рейтингов
     Matrix[фильм_i, пользователь_j] = rating_ij   (или 0, если не оценивал)
-    
+
     Размер: ~9000 фильмов × ~600 пользователей
 
 Шаг 2: Центрирование по фильмам
     Для каждой строки вычитаем среднее:
     centered[i, j] = rating[i, j] - mean_rating[i]
-    
+
     ЗАЧЕМ?
     - Убирается "bias популярности": факт что Титаник имеет средний рейтинг 4.2
     - Остаётся ОТНОСИТЕЛЬНОЕ отношение пользователей: кому он нравится (выше среднего)
@@ -171,15 +171,15 @@ class ContentRecommender:
 Шаг 3: Item-Item сходство
     Для каждой пары фильмов:
     similarity(фильм_i, фильм_j) = cosine(centered_row_i, centered_row_j)
-    
+
     → Фильмы одинаково любимы одними пользователями
     → Фильмы одинаково нелюбимы одними пользователями
     → similarity высока = похожая "аудитория"
 
 Шаг 4: Рекомендация для пользователя
-    score(фильм_новый) = Σ similarity(фильм_новый, фильм_оценённый) × 
+    score(фильм_новый) = Σ similarity(фильм_новый, фильм_оценённый) ×
                          (rating_оценённый - 2.5)
-    
+
     Сумма по всем оценённым фильмам!
     Сдвиг на 2.5 → низкие оценки штрафуют (отталкивают)
 ```
@@ -202,7 +202,7 @@ similarity(Avatar, Titanic) = cosine([1.5, 0.2, -0.8, 0], [0, -1.2, 0.5, 1.0])
     score(Inception) = similarity(Inception, Avatar) × (4.5 - 2.5) +
                        similarity(Inception, Titanic) × (2.0 - 2.5)
                      ≈ -0.3 × 2.0 + some_sim × (-0.5)
-                     
+
 Чем сильнее оценка выше 2.5, тем больше её наибольший вес!
 ```
 
@@ -212,27 +212,27 @@ similarity(Avatar, Titanic) = cosine([1.5, 0.2, -0.8, 0], [0, -1.2, 0.5, 1.0])
 class CollaborativeRecommender:
     def __init__(self, min_ratings: int = 5):
         ratings = load_ratings()
-        
+
         # Матрица: фильмы × пользователи
         self.pivot = ratings.pivot_table(
             index="movie_id", columns="user_id", values="rating"
         )
-        
+
         # Центрирование
         centered = self.pivot.sub(self.pivot.mean(axis=1), axis=0).fillna(0)
-        
+
         # Сходство
         self.sims = cosine_similarity(centered.values)
-    
+
     def for_user(self, ratings: DataFrame) -> DataFrame:
         # ratings: [movie_id, rating]
         pred = np.zeros(len(self.movie_ids))
-        
+
         for _, r in ratings.iterrows():
             movie_idx = self.idx_by_id[r["movie_id"]]
             # scores += similarity * (rating - 2.5)
             pred += self.sims[movie_idx] * (r["rating"] - 2.5)
-        
+
         # Top-N по pred
         return sorted_by_pred[:top_n]
 ```
@@ -264,14 +264,14 @@ class CollaborativeRecommender:
 
 Шаг 2: Нормализовать оценки обоих в [0, 1]
     score_norm = (score - min) / (max - min)
-    
+
     ЗАЧЕМ? Масштабы разные:
     - Content-based: similarity в [0, 1]
     - Collaborative: может быть в любом диапазоне (даже отрицательные)
 
 Шаг 3: Объединить с параметром α
     hybrid_score = α × score_content + (1 - α) × score_collab
-    
+
     α ∈ [0, 1]:
     - α = 1.0 → только content-based
     - α = 0.5 → равный вес
@@ -296,26 +296,26 @@ class HybridRecommender:
     def __init__(self, content: ContentRecommender, collab: CollaborativeRecommender):
         self.content = content
         self.collab = collab
-    
+
     def for_user(self, ratings: DataFrame, top_n: int = 10, alpha: float = 0.5):
         # Получить оба набора
         c = self._norm(self.content.for_user(ratings, top_n=200))
         k = self._norm(self.collab.for_user(ratings, top_n=200))
-        
+
         # Объединить
         merged = c.merge(k, on=['movie_id', ...], how='outer', suffixes=('_c', '_k'))
         merged['score'] = alpha * merged['score_c'] + (1 - alpha) * merged['score_k']
-        
+
         # Вернуть top-N
         return merged.nlargest(top_n, 'score')
 ```
 
 #### Достоинства
 
-✅ Одновременно объясним (content) и умён (collab)  
-✅ Гибкий: можно регулировать α под сценарий  
-✅ Работает и для новых, и для опытных пользователей  
-✅ Уменьшает "фильтр-пузырь" коллаборативной фильтрации  
+✅ Одновременно объясним (content) и умён (collab)
+✅ Гибкий: можно регулировать α под сценарий
+✅ Работает и для новых, и для опытных пользователей
+✅ Уменьшает "фильтр-пузырь" коллаборативной фильтрации
 
 ---
 
@@ -335,7 +335,7 @@ class HybridRecommender:
 def user_mode(u: dict):
     ml_uid = u["ml_user_id"]
     hist = auth.get_user_ratings(ml_uid)  # Получить историю оценок
-    
+
     if hist.empty:  # ← АВТОМАТИЧЕСКОЕ ОБНАРУЖЕНИЕ ХОЛОДНОГО СТАРТА
         _cold_start(ml_uid)  # Показать форму холодного старта
     else:
@@ -395,23 +395,23 @@ def user_mode(u: dict):
   (исключаем редкие фильмы с шумом)
 
 Шаг 3: BAYESIAN RANKING (ключевой шаг!)
-  
+
   Проблема: Fargo (100 оценок, 4.8★) vs. Masterpiece-Z (1 оценка, 5.0★)?
-  
+
   Решение: Bayesian усреднение
   score = (n × avg + m × C) / (n + m)
-  
+
   Где:
     n = COUNT(оценки этого фильма)
     avg = средняя оценка фильма
     m = параметр доверия (обычно ~ min_ratings = 30)
     C = глобальная средняя оценка (~3.5)
-  
+
   Интерпретация:
     → Если n мало: score ≈ C (общая средняя)
     → Если n велико: score ≈ avg (реальная оценка)
     → m = "сколько виртуальных голосов среднего качества добавить"
-  
+
   Примеры:
     Fargo:       score = (100 × 4.8 + 30 × 3.5) / 130 ≈ 4.65
     Masterpiece: score = (1 × 5.0 + 30 × 3.5) / 31 ≈ 3.61 ← штрафован!
@@ -419,10 +419,10 @@ def user_mode(u: dict):
 
 Шаг 4: Штраф за недостаток жанров
   final_score = bayesian_score × (match_count / len(genres))
-  
+
   match_count = сколько выбранных жанров имеет фильм
   len(genres) = сколько жанров выбрал пользователь
-  
+
   Примеры:
     - Фильм только Action, выбраны [Action, Adventure] → 1/2 = 0.5× штраф
     - Фильм и Action, и Adventure → 2/2 = 1.0× (бонус!)
@@ -444,14 +444,14 @@ def user_mode(u: dict):
     - Совпадение: 1 из 2 жанров (Action)
     - Bayesian: (462×4.5 + 30×3.5) / 492 ≈ 4.43
     - Final: 4.43 × 1/2 = 2.215
-    
+
   - Inception
     - Жанры: Action, Mystery, Sci-Fi
     - Оценок: 380, средняя: 4.2★
     - Совпадение: 1 из 2 жанров (Action)
     - Bayesian: (380×4.2 + 30×3.5) / 410 ≈ 4.14
     - Final: 4.14 × 1/2 = 2.07
-    
+
   - Pirates of the Caribbean
     - Жанры: Action, Adventure, Comedy, Fantasy
     - Оценок: 320, средняя: 4.0★
