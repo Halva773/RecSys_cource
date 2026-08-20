@@ -1,2 +1,18 @@
 .ipynb_checkpoints/
-data/
+
+# Датасеты для лабораторных №1–2 скачиваются отдельно.
+/data/
+
+# Локальные Python-окружения и кэш.
+.venv/
+__pycache__/
+*.py[cod]
+.DS_Store
+
+# Генерируемые SQLite-базы и временные журналы.
+*.db
+*.sqlite3
+*.sqlite
+*-journal
+*-wal
+*-shm
